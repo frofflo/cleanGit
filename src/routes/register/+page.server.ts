@@ -17,8 +17,7 @@ export const actions: Actions = {
   login: async ({ request, cookies }) => {
     const data = await request.formData();
     let username = data.get("username")?.toString();
-    let password = data.get("password")?.toString();
-
+      
     if (username) {
       const existingUser = await prisma.user.findUnique({
         where: {
@@ -26,11 +25,23 @@ export const actions: Actions = {
         }, 
       });
       if (existingUser) {
-        if (password) {
-          if (validatePassword(password, existingUser.salt, existingUser.hash)) {
-            const token = await prisma.token.create({
-              data: { userId: existingUser.id },
+        return fail(400, { password: "Username already exists" });
+      } else {
+        let repeatedPassword = data.get("repeatedPassword")?.toString();
+        let password = data.get("password")?.toString();
+        if (password == repeatedPassword && password && repeatedPassword){
+          const { salt, hash } = hashPassword(password);
+          const newUser = await prisma.user.create({
+              data: {
+                name: username,
+                salt: salt,
+                hash: hash,
+              },
             });
+            const token = await prisma.token.create({
+              data: { userId: newUser.id },
+            });
+
             cookies.set("token_id", token.id, {
               secure: false,
               path: "/"
@@ -39,19 +50,18 @@ export const actions: Actions = {
               secure: false,
               path: "/"
             });
-    
-            throw redirect(303, "/");
-          } else {
-            return fail(400, { password: "Invalid password" });
-          }  
+            
+          throw redirect(303, "/");
+        } else {
+          return fail(400, { password: "Passwords do not match!" });
         }
-      } else {
-        return fail(400, { password: "User does not exist" });
       }
     }
   },
 };
-function validatePassword(inputPassword : crypto.BinaryLike, storedSalt : crypto.BinaryLike, storedHash : string) {
-  const hash = crypto.pbkdf2Sync(inputPassword, storedSalt, 1000, 64, 'sha512').toString('hex');
-  return storedHash === hash;
+
+function hashPassword(password : crypto.BinaryLike){
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return { salt, hash };
 }
