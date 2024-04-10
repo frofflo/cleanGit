@@ -1,0 +1,8 @@
+:root{
+    --white-yellow: rgb(246, 244, 235);
+    --darker-blue: rgb(10, 64, 99);
+    --navbar-blue: rgb(70, 130, 169);
+    --brighter-blue: rgb(108, 158, 191);
+    --evenBrighter-blue: rgb(121, 172, 205);
+    --font: Georgia, 'Times New Roman', Times, serif;
+}

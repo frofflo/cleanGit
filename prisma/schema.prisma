@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  tokens   token[]
+  salt     String
+  hash     String
+  PixelArt PixelArt[]
+  Favorites PixelArt[] @relation("Favorites")
+}
+
+model token {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+}
+
+model PixelArt {
+  id       Int     @id @default(autoincrement())
+  name     String
+  username String
+  width    Int
+  height   Int
+  user     User    @relation(fields: [userId], references: [id])
+  userId   Int
+  isFavoritedBy User[] @relation("Favorites")
+  Pixel    Pixel[]
+}
+
+model Pixel {
+  id         Int      @id @default(autoincrement())
+  color      String
+  pixelArt   PixelArt @relation(fields: [pixelArtId], references: [id])
+  pixelArtId Int
+}
